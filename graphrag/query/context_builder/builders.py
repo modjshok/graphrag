@@ -19,6 +19,7 @@ class ContextBuilderResult:
 
     context_chunks: str | list[str]
     context_records: dict[str, pd.DataFrame]
+    context_figures: list[str] | None = None
     llm_calls: int = 0
     prompt_tokens: int = 0
     output_tokens: int = 0

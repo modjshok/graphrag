@@ -206,7 +206,7 @@ class LocalSearchMixedContext(LocalContextBuilder):
             final_context_data = {**final_context_data, **local_context_data}
 
         text_unit_tokens = max(int(max_context_tokens * text_unit_prop), 0)
-        text_unit_context, text_unit_context_data = self._build_text_unit_context(
+        text_unit_context, text_unit_context_data, text_units_figures = self._build_text_unit_context(
             selected_entities=selected_entities,
             max_context_tokens=text_unit_tokens,
             return_candidate_context=return_candidate_context,
@@ -219,6 +219,7 @@ class LocalSearchMixedContext(LocalContextBuilder):
         return ContextBuilderResult(
             context_chunks="\n\n".join(final_context),
             context_records=final_context_data,
+            context_figures=text_units_figures,
         )
 
     def _build_community_context(
@@ -341,6 +342,7 @@ class LocalSearchMixedContext(LocalContextBuilder):
         unit_info_list.sort(key=lambda x: (x[1], -x[2]))
 
         selected_text_units = [unit[0] for unit in unit_info_list]
+        selected_text_units_figures = [unit[0].attributes.get("figures", "") for unit in unit_info_list]
 
         context_text, context_data = build_text_unit_context(
             text_units=selected_text_units,
@@ -372,7 +374,7 @@ class LocalSearchMixedContext(LocalContextBuilder):
                 else:
                     context_data[context_key]["in_context"] = True
 
-        return (str(context_text), context_data)
+        return (str(context_text), context_data, selected_text_units_figures)
 
     def _build_local_context(
         self,

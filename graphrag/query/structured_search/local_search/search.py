@@ -84,9 +84,16 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
                     context_data=context_result.context_chunks,
                     response_type=self.response_type,
                 )
-            history_messages = [
-                {"role": "system", "content": search_prompt},
-            ]
+            
+            if context_result.context_figures and any(fig for fig in context_result.context_figures if fig.strip()):
+                history_messages = [
+                    {"role": "system", "content": [{"type": "text", "text": search_prompt}] + [{"type": "image_url", "image_url": {
+                "url": f"data:image/jpeg;base64,{image_encoded}"}} for image_encoded in context_result.context_figures if image_encoded.strip()]}
+                ]
+            else:
+                history_messages = [
+                    {"role": "system", "content": search_prompt},
+                ]
 
             full_response = ""
 
@@ -148,10 +155,16 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
         search_prompt = self.system_prompt.format(
             context_data=context_result.context_chunks, response_type=self.response_type
         )
-        history_messages = [
-            {"role": "system", "content": search_prompt},
-        ]
 
+        if context_result.context_figures and any(fig for fig in context_result.context_figures if fig.strip()):
+                history_messages = [
+                    {"role": "system", "content": [{"type": "text", "text": search_prompt}] + [{"type": "image_url", "image_url": {
+                "url": f"data:image/jpeg;base64,{image_encoded}"}} for image_encoded in context_result.context_figures if image_encoded.strip()]}
+                ]
+        else:
+            history_messages = [
+                {"role": "system", "content": search_prompt},
+            ]
         for callback in self.callbacks:
             callback.on_context(context_result.context_records)
 

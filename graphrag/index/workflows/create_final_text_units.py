@@ -22,6 +22,7 @@ async def run_workflow(
 ) -> WorkflowFunctionOutput:
     """All the steps to transform the text units."""
     text_units = await load_table_from_storage("text_units", context.storage)
+    final_documents = await load_table_from_storage("documents", context.storage)
     final_entities = await load_table_from_storage("entities", context.storage)
     final_relationships = await load_table_from_storage(
         "relationships", context.storage
@@ -34,6 +35,7 @@ async def run_workflow(
 
     output = create_final_text_units(
         text_units,
+        final_documents,
         final_entities,
         final_relationships,
         final_covariates,
@@ -46,6 +48,7 @@ async def run_workflow(
 
 def create_final_text_units(
     text_units: pd.DataFrame,
+    final_documents: pd.DataFrame,
     final_entities: pd.DataFrame,
     final_relationships: pd.DataFrame,
     final_covariates: pd.DataFrame | None,
@@ -53,6 +56,16 @@ def create_final_text_units(
     """All the steps to transform the text units."""
     selected = text_units.loc[:, ["id", "text", "document_ids", "n_tokens"]]
     selected["human_readable_id"] = selected.index + 1
+    
+    # Add metadata column with figures from documents
+    selected["metadata"] = selected["document_ids"].apply(
+        lambda doc_ids: {"figures":[
+            final_documents.loc[final_documents["id"] == doc_id, "metadata"].iloc[0].get("figures", "")
+            if len(final_documents.loc[final_documents["id"] == doc_id]) > 0
+            else ""
+            for doc_id in doc_ids
+        ]}
+    )
 
     entity_join = _entities(final_entities)
     relationship_join = _relationships(final_relationships)
