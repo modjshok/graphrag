@@ -1,5 +1,5 @@
 # Changelog
-Note: version releases in the 0.x.y range may introduce breaking changes.
+ote: version releases in the 0.x.y range may introduce breaking changes.
 
 ## 2.2.1
 
