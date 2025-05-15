@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 import tiktoken
+import numpy as np
 
 from graphrag.data_model.community_report import CommunityReport
 from graphrag.data_model.covariate import Covariate
@@ -46,6 +47,9 @@ from graphrag.vector_stores.base import BaseVectorStore
 
 log = logging.getLogger(__name__)
 
+from graphrag.logger.print_progress import PrintProgressLogger
+
+logger = PrintProgressLogger("")
 
 class LocalSearchMixedContext(LocalContextBuilder):
     """Build data context for local search prompt combining community reports and entity/relationship/covariate tables."""
@@ -216,10 +220,17 @@ class LocalSearchMixedContext(LocalContextBuilder):
             final_context.append(text_unit_context)
             final_context_data = {**final_context_data, **text_unit_context_data}
 
+        selected_text_units_figures = [
+            fig.item() if isinstance(fig, np.ndarray) and fig.size == 1
+            else fig[0] if isinstance(fig, list) and len(fig) == 1
+            else fig
+            for fig in text_units_figures
+        ]
+
         return ContextBuilderResult(
             context_chunks="\n\n".join(final_context),
             context_records=final_context_data,
-            context_figures=text_units_figures,
+            context_figures=selected_text_units_figures,
         )
 
     def _build_community_context(
@@ -342,8 +353,18 @@ class LocalSearchMixedContext(LocalContextBuilder):
         unit_info_list.sort(key=lambda x: (x[1], -x[2]))
 
         selected_text_units = [unit[0] for unit in unit_info_list]
-        selected_text_units_figures = [unit[0].attributes.get("figures", "") for unit in unit_info_list]
-
+        # logger.success(f"selected_text_units: {selected_text_units}")
+        selected_text_units_figures = [
+            unit[0].attributes.get("metadata", {}).get("figures", "") for unit in unit_info_list
+        ]
+        # flatten arrays to lists of strings
+        selected_text_units_figures = [
+            fig.item() if isinstance(fig, np.ndarray) and fig.size == 1
+            else fig[0] if isinstance(fig, list) and len(fig) == 1
+            else fig
+            for fig in selected_text_units_figures
+        ]
+        
         context_text, context_data = build_text_unit_context(
             text_units=selected_text_units,
             token_encoder=self.token_encoder,

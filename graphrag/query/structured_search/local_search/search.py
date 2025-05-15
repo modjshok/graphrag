@@ -24,6 +24,21 @@ from graphrag.query.structured_search.base import BaseSearch, SearchResult
 
 log = logging.getLogger(__name__)
 
+from graphrag.logger.print_progress import PrintProgressLogger
+
+logger = PrintProgressLogger("")
+
+from io import BytesIO
+import base64
+from PIL import Image
+
+
+def im_2_b64(image):
+    buff = BytesIO()
+    image.save(buff, format="JPEG")
+    img_str = base64.b64encode(buff.getvalue())
+    return img_str
+
 
 class LocalSearch(BaseSearch[LocalContextBuilder]):
     """Search orchestration for local search mode."""
@@ -86,9 +101,11 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
                 )
             
             if context_result.context_figures and any(fig for fig in context_result.context_figures if fig.strip()):
+                
+                logger.success(f"salam")
                 history_messages = [
                     {"role": "system", "content": [{"type": "text", "text": search_prompt}] + [{"type": "image_url", "image_url": {
-                "url": f"data:image/jpeg;base64,{image_encoded}"}} for image_encoded in context_result.context_figures if image_encoded.strip()]}
+                "url": f"data:image/jpeg;base64,{im_2_b64(Image.open(image.lstrip('/'))).decode('utf-8')}"}} for image in context_result.context_figures if image.strip()]}
                 ]
             else:
                 history_messages = [
@@ -155,11 +172,11 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
         search_prompt = self.system_prompt.format(
             context_data=context_result.context_chunks, response_type=self.response_type
         )
-
+        # logger.success(f"salam {context_result.context_figures}")
         if context_result.context_figures and any(fig for fig in context_result.context_figures if fig.strip()):
                 history_messages = [
-                    {"role": "system", "content": [{"type": "text", "text": search_prompt}] + [{"type": "image_url", "image_url": {
-                "url": f"data:image/jpeg;base64,{image_encoded}"}} for image_encoded in context_result.context_figures if image_encoded.strip()]}
+                    {"role": "user", "content": [{"type": "text", "text": search_prompt}] + [{"type": "image_url", "image_url": {
+                "url": f"data:image/jpeg;base64,{im_2_b64(Image.open(image.lstrip('/'))).decode('utf-8')}"}} for image in context_result.context_figures if image.strip()]}
                 ]
         else:
             history_messages = [

@@ -233,7 +233,7 @@ def read_text_units(
     covariates_col: str | None = "covariate_ids",
     tokens_col: str | None = "n_tokens",
     document_ids_col: str | None = "document_ids",
-    attributes_cols: list[str] | None = "metadata",
+    attributes_cols: list[str] | None = ["metadata"],
 ) -> list[TextUnit]:
     """Read text units from a dataframe using pre-converted records."""
     records = _prepare_records(df)
